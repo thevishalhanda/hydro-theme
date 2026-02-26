@@ -40,7 +40,7 @@ function PromoBanner(props: PromoBannerProps) {
   const { children, ref, loaderData, ...rest } = props;
   
   // You can now access the products here
-  console.log("Fetched Products:", loaderData?.products);
+  console.log("Fetched Products:", loaderData);
 
   return (
     <Section ref={ref} {...rest}>
@@ -82,3 +82,4 @@ export let loader = async ({ storefront, section }) => {
     products: data.products.nodes,
   };
 };
+
