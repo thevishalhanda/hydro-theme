@@ -1,59 +1,78 @@
+import { forwardRef } from "react";
+import type { HydrogenComponentProps } from "@weaverse/hydrogen";
 import { createSchema } from "@weaverse/hydrogen";
-import type { SectionProps } from "~/components/section";
-import { Section, sectionSettings } from "~/components/section";
 
-interface PromoBannerProps extends SectionProps {
-  ref?: React.Ref<HTMLElement>;
+// 1. Define the TypeScript interface for your props
+interface MyComponentProps extends HydrogenComponentProps {
+  heading: string;
+  description: string;
+  buttonText: string;
+  backgroundColor: string;
 }
 
-function PromoBanner(props: PromoBannerProps) {
-  const { children, ref, ...rest } = props;
+// 2. The React Component
+// Note: Using forwardRef is required for Weaverse to handle selection in the Studio
+const MyCustomComponent = forwardRef<HTMLElement, MyComponentProps>((props, ref) => {
+  const { heading, description, buttonText, backgroundColor, ...rest } = props;
 
   return (
-    <Section ref={ref} {...rest}>
-      <div className="relative w-full overflow-hidden rounded-xl">
-        {children}
-      </div>
-    </Section>
+    <section 
+      ref={ref} 
+      {...rest} 
+      style={{ backgroundColor }} 
+      className="p-10 text-center"
+    >
+      <h2 className="text-3xl font-bold">{heading}</h2>
+      <p className="mt-4">{description}</p>
+      {buttonText && (
+        <button className="mt-6 px-4 py-2 bg-black text-white rounded">
+          {buttonText}
+        </button>
+      )}
+    </section>
   );
-}
+});
 
-export default PromoBanner;
+export default MyCustomComponent;
 
+// 3. Define the Schema for Weaverse Studio
 export const schema = createSchema({
-  type: "promo-banner",
-  title: "Promo Banner",
-  settings: sectionSettings,
-  childTypes: [
-    "subheading",
-    "heading",
-    "paragraph",
-    "button",
-    "image"
-  ],
-  presets: {
-    gap: 16,
-    children: [
-      {
-        type: "subheading",
-        content: "LIMITED TIME OFFER",
-      },
-      {
-        type: "heading",
-        content: "Summer Collection 2026",
-      },
-      {
-        type: "paragraph",
-        content:
-          "Discover the latest trends with up to 40% off on selected items.",
-      },
-      {
-        type: "button",
-        content: "Shop Now",
-        settings: {
-          link: "/collections/summer",
+  type: "my-custom-component", // Unique ID
+  title: "My Custom Component", // Display name in Studio
+  settings: [
+    {
+      group: "Content",
+      inputs: [
+        {
+          type: "text",
+          name: "heading",
+          label: "Heading",
+          defaultValue: "Hello Weaverse!",
         },
-      },
-    ],
-  },
+        {
+          type: "textarea",
+          name: "description",
+          label: "Description",
+          defaultValue: "This is a custom component created with code.",
+        },
+        {
+          type: "text",
+          name: "buttonText",
+          label: "Button Text",
+          defaultValue: "Click Me",
+        },
+      ],
+    },
+    {
+      group: "Design",
+      inputs: [
+        {
+          type: "color",
+          name: "backgroundColor",
+          label: "Background Color",
+          defaultValue: "#ffffff",
+        },
+      ],
+    },
+  ],
 });
