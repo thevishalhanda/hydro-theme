@@ -1,78 +1,84 @@
-import { forwardRef } from "react";
-import type { HydrogenComponentProps } from "@weaverse/hydrogen";
 import { createSchema } from "@weaverse/hydrogen";
+import type { SectionProps } from "~/components/section";
+import { Section, sectionSettings } from "~/components/section";
 
-// 1. Define the TypeScript interface for your props
-interface MyComponentProps extends HydrogenComponentProps {
-  heading: string;
-  description: string;
-  buttonText: string;
-  backgroundColor: string;
+// 1. Define your GraphQL Query
+const PRODUCTS_QUERY = `#graphql
+  query getProducts($country: CountryCode, $language: LanguageCode, $first: Int)
+  @inContext(country: $country, language: $language) {
+    products(first: $first) {
+      nodes {
+        id
+        title
+        handle
+        featuredImage {
+          url
+          altText
+          width
+          height
+        }
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface PromoBannerProps extends SectionProps {
+  ref?: React.Ref<HTMLElement>;
+  // Data from the loader will be available in props.loaderData
+  loaderData?: {
+    products: any[]; // Replace with proper types if available
+  };
 }
 
-// 2. The React Component
-// Note: Using forwardRef is required for Weaverse to handle selection in the Studio
-const MyCustomComponent = forwardRef<HTMLElement, MyComponentProps>((props, ref) => {
-  const { heading, description, buttonText, backgroundColor, ...rest } = props;
+function PromoBanner(props: PromoBannerProps) {
+  const { children, ref, loaderData, ...rest } = props;
+  
+  // You can now access the products here
+  console.log("Fetched Products:", loaderData?.products);
 
   return (
-    <section 
-      ref={ref} 
-      {...rest} 
-      style={{ backgroundColor }} 
-      className="p-10 text-center"
-    >
-      <h2 className="text-3xl font-bold">{heading}</h2>
-      <p className="mt-4">{description}</p>
-      {buttonText && (
-        <button className="mt-6 px-4 py-2 bg-black text-white rounded">
-          {buttonText}
-        </button>
-      )}
-    </section>
+    <Section ref={ref} {...rest}>
+      <div className="relative w-full overflow-hidden rounded-xl">
+        {children}
+        {/* Example: Render product titles if needed */}
+        <div className="flex gap-4 mt-4">
+          {loaderData?.products?.map((product: any) => (
+            <div key={product.id} className="text-sm">{product.title}</div>
+          ))}
+        </div>
+      </div>
+    </Section>
   );
-});
+}
 
-export default MyCustomComponent;
+export default PromoBanner;
 
-// 3. Define the Schema for Weaverse Studio
 export const schema = createSchema({
-  type: "my-custom-component", // Unique ID
-  title: "My Custom Component", // Display name in Studio
-  settings: [
-    {
-      group: "Content",
-      inputs: [
-        {
-          type: "text",
-          name: "heading",
-          label: "Heading",
-          defaultValue: "Hello Weaverse!",
-        },
-        {
-          type: "textarea",
-          name: "description",
-          label: "Description",
-          defaultValue: "This is a custom component created with code.",
-        },
-        {
-          type: "text",
-          name: "buttonText",
-          label: "Button Text",
-          defaultValue: "Click Me",
-        },
-      ],
-    },
-    {
-      group: "Design",
-      inputs: [
-        {
-          type: "color",
-          name: "backgroundColor",
-          label: "Background Color",
-          defaultValue: "#ffffff",
-        },
-      ],
-    },
-  ],
+  type: "promo-banner",
+  title: "Promo Banner",
+  childTypes: ["subheading", "heading", "paragraph", "button", "image"],
+  presets: {
+    // ... your existing presets
+  },
 });
+
+// 2. Add the Loader function
+export let loader = async ({ storefront, section }) => {
+  const { productLimit } = section.settings;
+
+  const data = await storefront.query(PRODUCTS_QUERY, {
+    variables: {
+      first: productLimit || 4,
+    },
+  });
+
+  return {
+    products: data.products.nodes,
+  };
+};
